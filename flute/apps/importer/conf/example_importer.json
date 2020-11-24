@@ -1,0 +1,58 @@
+{
+  "gevent": {
+    "pool_size": 10
+  },
+  "nebula": {
+    "addresses": [
+      "127.0.0.1:3699"
+    ],
+    "user": "user",
+    "pwd": "password",
+    "space": "test",
+    "connection": {
+      "timeout": 3000,
+      "retry": 3
+    },
+    "execution": {
+      "retry": 3
+    }
+  },
+  "source": {
+    "mysql":{
+      "host": "127.0.0.1",
+      "port": "3306",
+      "db": "test",
+      "user": "user",
+      "password": "password"
+    }
+  },
+  "tags": [
+    {
+      "name": "tag_name_1",
+      "type": "mysql",
+      "exec": "select hive_field_0, hive_field_1, hive_field_2 from database.table",
+      "fields": {
+        "sql_field_0": "nebula_field_0",
+        "sql_field_1": "nebula_field_1",
+        "sql_field_2": "nebula_field_2"
+      },
+      "vertex": "vertex_id_field",
+      "fund": "hash"
+    }
+  ],
+  "edges": [
+    {
+      "name": "edge_name_1",
+      "type": "mysql",
+      "exec": "select sql_field_0, sql_field_1, sql_field_2 from database.table",
+      "fields": {
+        "sql_field_0": "nebula_field_0",
+        "sql_field_1": "nebula_field_1",
+        "sql_field_2": "nebula_field_2"
+      },
+      "source": "source_id_field",
+      "target": "target_id_field"
+    }
+  ]
+}
+
