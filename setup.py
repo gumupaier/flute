@@ -5,21 +5,27 @@
 # @File    : setup.py
 from setuptools import setup, find_packages
 
-with open('README.md') as f:
-    readme = f.read()
+# with open('README.md') as f:
+#     readme = f.read()
+
+readme = """
+please see https://github.com/gumupaier/flute
+"""
+
+
 
 install_packages = []
 setup(
-    name='flute',
-    version='1.0',
-    description='flute',
+    name='nebula_flute',
+    version='1.0.2',
+    description='nebula graph database toolkit python version',
     long_description=readme,
     author='henson',
     author_email='henson_wu@foxmail.com',
-    url='',
+    url='https://github.com/gumupaier/flute',
     packages=find_packages(exclude=('tests', 'docs', 'templates')),
     package_data={
-        "flute": ["*.jar"],
+        "nebula_flute": ["*.jar"],
     },
     install_requires=[
         'aiomysql',
