@@ -3,27 +3,27 @@
 # @File    : task.py
 import yaml
 import inquirer
+import copy
+
+from flute.apps.amber.const import VERSION_IMAGE_MAP
 
 
 class StackfileGenerator(object):
     def __init__(self):
         self._template = None
+        self._yaml = None
         self._metad_tpl = None
         self._storaged_tpl = None
         self._graphd_tpl = None
         self.usr_cfg = dict()
 
     def load_template(self):
-        with open('./template/docker-stack-template.yml') as f:
+        with open('flute/apps/amber/template/docker-stack-template.yml') as f:
             self._template = yaml.load(f, Loader=yaml.FullLoader)
 
         self._metad_tpl = self._template['services']['metad']
         self._storaged_tpl = self._template['services']['storaged']
         self._graphd_tpl = self._template['services']['graphd']
-        print(self._template)
-        print(self._metad_tpl)
-        print(self._storaged_tpl)
-        print(self._graphd_tpl)
 
     def ip_validation(self, answers, current):
         ip_list = current.split()
@@ -45,6 +45,7 @@ class StackfileGenerator(object):
     def process(self):
         self.load_template()
         self.user_config()
+        self.update_yaml()
         self.generate_file()
 
     def user_config(self):
@@ -81,14 +82,64 @@ class StackfileGenerator(object):
             self.usr_cfg['hostnames'][_machine] = answers['hostname']
 
     def update_yaml(self):
-        pass
+        self._yaml = copy.deepcopy(self._template)
+        # update metad service
+        metad_cfg = copy.deepcopy(self._metad_tpl)
+        metad_cfg['image'] = VERSION_IMAGE_MAP['metad'].get(self.usr_cfg['version'])
+        # update meta_server config
+        metad_server_str = '--meta_server_addrs=' + ','.join([f'{v}:45500' for v in self.usr_cfg['roles']['metad']])
+        metad_cfg['command'][0] = metad_server_str
+        services = dict()
 
-    def update_image(self):
-        pass
+        for index, meta_ip in enumerate(self.usr_cfg['roles']['metad']):
+            _meta_cfg = copy.deepcopy(metad_cfg)
+            _meta_cfg['command'][1], _meta_cfg['command'][2] = f'--local_ip={meta_ip}', f'--ws_ip={meta_ip}'
+            _meta_cfg['deploy']['placement']['constraints'], _meta_cfg['healthcheck']['test'][3] = [
+                                                                                                       f'node.hostname == {self.usr_cfg["hostnames"][meta_ip]}'], f'http://{meta_ip}:11000/status'
+            _meta_cfg['volumes'] = [f'data-metad{index}:/data/meta', f'logs-metad{index}:/logs']
+            services[f'metad{index}'] = _meta_cfg
+
+        # update storage service
+        storage_cfg = copy.deepcopy(self._storaged_tpl)
+        storage_cfg['image'] = VERSION_IMAGE_MAP['storaged'].get(self.usr_cfg['version'])
+        # update storage_server config
+        storage_cfg['command'][0] = metad_server_str
+        for index, storage_ip in enumerate(self.usr_cfg['roles']['storaged']):
+            _storage_cfg = copy.deepcopy(storage_cfg)
+            _storage_cfg['command'][1], _storage_cfg['command'][2] = f'--local_ip={storage_ip}', f'--ws_ip={storage_ip}'
+            _storage_cfg['deploy']['placement']['constraints'], _storage_cfg['healthcheck']['test'][3] = [
+                                                                                                             f'node.hostname == {self.usr_cfg["hostnames"][storage_ip]}'], f'http://{storage_ip}:12000/status'
+            _storage_cfg['volumes'] = [f'data-storaged{index}:/data/meta', f'logs-storaged{index}:/logs']
+            services[f'storaged{index}'] = _storage_cfg
+
+        # update graph service
+        graph_cfg = copy.deepcopy(self._graphd_tpl)
+        graph_cfg['image'] = VERSION_IMAGE_MAP['graphd'].get(self.usr_cfg['version'])
+        # update graph_server config
+        graph_cfg['command'][0] = metad_server_str
+        for index, graph_ip in enumerate(self.usr_cfg['roles']['graphd']):
+            _graph_cfg = copy.deepcopy(graph_cfg)
+            _graph_cfg['command'][1], _graph_cfg['command'][2] = f'--local_ip={graph_ip}', f'--ws_ip={graph_ip}'
+            _graph_cfg['deploy']['placement']['constraints'], _graph_cfg['healthcheck']['test'][3] = [
+                                                                                                         f'node.hostname == {self.usr_cfg["hostnames"][graph_ip]}'], f'http://{graph_ip}:13000/status'
+            _graph_cfg['volumes'] = [f'data-graphd{index}:/data/meta', f'logs-graphd{index}:/logs']
+            services[f'graphd{index}'] = _graph_cfg
+
+        self._yaml['services'] = services
+
+        self._yaml['volumes'] = dict()
+        for str in ('metad', 'storaged', 'graphd'):
+            self._yaml['volumes'].update({
+                f'logs-{str}{index}': None
+                for index, value in enumerate(self.usr_cfg['roles'][str])})
+            if str != 'graphd':
+                self._yaml['volumes'].update({
+                    f'data-{str}{index}': None
+                    for index, value in enumerate(self.usr_cfg['roles'][str])})
 
     def generate_file(self):
         with open(r'./docker-stack.yaml', 'w') as f:
-            yaml_str = yaml.safe_dump(self._template,
+            yaml_str = yaml.safe_dump(self._yaml,
                                       default_flow_style=False,
                                       width=50,
                                       indent=2).replace(r"''", '').replace('null', '')
