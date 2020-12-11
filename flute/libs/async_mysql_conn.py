@@ -19,7 +19,14 @@ class AsyncMysql(object):
         self.connection_pool = None
         self._conn = None
 
-    async def create_pool(self, loop: asyncio.AbstractEventLoop) -> None:
+    async def create_pool(self, loop: asyncio.AbstractEventLoop, **kwargs) -> None:
+        """
+
+        :param loop:
+        :param kwargs:
+        :return:
+        """
+
         self.connection_pool = await create_pool(loop=loop, **locals())
 
     def get_pool(self):
