@@ -3,6 +3,13 @@
 
 nebula graph database toolkit python version
 
+- install command
+```
+pip install nebula-flute
+```
+
+
+
 - The list of commands
 
 ```
