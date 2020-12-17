@@ -12,12 +12,10 @@ readme = """
 please see https://github.com/gumupaier/flute
 """
 
-
-
 install_packages = []
 setup(
     name='nebula_flute',
-    version='1.0.0',
+    version='1.0.4',
     description='nebula graph database toolkit python version',
     long_description=readme,
     author='henson',
@@ -25,7 +23,7 @@ setup(
     url='https://github.com/gumupaier/flute',
     packages=find_packages(exclude=('tests', 'docs', 'templates')),
     package_data={
-        "nebula_flute": ["*.jar"],
+        "": ["*.jar", "flute/apps/amber/template/*"],
     },
     install_requires=[
         'aiomysql',

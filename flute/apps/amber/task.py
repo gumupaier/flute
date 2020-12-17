@@ -18,7 +18,10 @@ class StackfileGenerator(object):
         self.usr_cfg = dict()
 
     def load_template(self):
-        with open('flute/apps/amber/template/docker-stack-template.yml') as f:
+        import os
+        tmp_path = os.path.dirname(__file__)
+        tmp_path = os.path.join(tmp_path, 'template/docker-stack-template.yml')
+        with open(tmp_path) as f:
             self._template = yaml.load(f, Loader=yaml.FullLoader)
 
         self._metad_tpl = self._template['services']['metad']
