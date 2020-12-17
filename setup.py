@@ -15,7 +15,7 @@ please see https://github.com/gumupaier/flute
 install_packages = []
 setup(
     name='nebula_flute',
-    version='1.0.4',
+    version='1.0.5',
     description='nebula graph database toolkit python version',
     long_description=readme,
     author='henson',
